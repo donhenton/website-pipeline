@@ -248,7 +248,7 @@ Resources:
             ChangeSetName: iam-changeset
             RoleArn:  !ImportValue bonzo-CFNRoleARN
             StackName: !Sub  '${System}-iam-stack'
-© 2020 GitHub,
+ 
       ArtifactStore:
         Type: S3
         Location: !Ref CodePipelineArtifactStoreBucket
