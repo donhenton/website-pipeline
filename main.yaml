@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Continuous deployment infrastructure for sample calculator application
+Description:  Continuous deployment infrastructure for S3 Bucket website-pipeline
 
 Parameters:
   BranchName:
@@ -402,3 +402,50 @@ Resources:
         - - !Ref 'AWS::StackName'
           - CodeBuild
     Type: AWS::IAM::Role
+
+  AppPipelineWebhook:
+    Type: 'AWS::CodePipeline::Webhook'
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Sub '${GithubProjectSecret.Value}'
+      Filters:
+        - JsonPath: $.ref
+          MatchEquals: 'refs/heads/{Branch}'
+      TargetPipeline: !Ref AppPipeline
+      TargetAction: SourceAction
+      Name: !Sub 'AppPipelineWebhook-${RepositoryName}'
+      TargetPipelineVersion: !GetAtt 
+        - AppPipeline
+        - Version
+      RegisterWithThirdParty: true
+  AppPipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      Name: !Sub 
+        - ${RepValue}-deploy-pipeline
+        - {RepValue: !Ref RepositoryName}
+      RoleArn: !GetAtt 
+        - CodePipelineTrustRole
+        - Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref RepositoryName
+                Branch: !Ref BranchName
+                OAuthToken: !Sub '${GithubOauthToken.Value}'
+                PollForSourceChanges: false
+              RunOrder: 1
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactsBucket
