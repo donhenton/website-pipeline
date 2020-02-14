@@ -3,10 +3,23 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Continuous deployment infrastructure for sample calculator application
 
 Parameters:
-  CodeCommitRepoName:
-    Description: A CodeCommit repository that contains the application code. Must be in same region as this stack.
+  BranchName:
+    Description: GitHub branch name
     Type: String
-    Default: aws-codebuild-samples
+    Default: master
+  RepositoryName:
+    Description: GitHub repository name
+    Type: String
+    Default: website-pipeline
+  GitHubOwner:
+      Type: String
+      Default: donhenton
+  TargetBucketName:
+    Description: final S3 bucket destination
+    Type: String
+    Default: com.awsdhenton.testing
+
+
 
 Outputs:
   PipelineConsoleUrl:
@@ -36,6 +49,24 @@ Outputs:
     Value: !Ref ArtifactsBucket
 
 Resources:
+
+  GithubOauthToken:
+    Type: Custom::GetSecureSSMFunction
+    Properties:
+      ServiceToken:
+        !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:getSecureSSM"
+      ParameterName: "/github/oauth"
+  GithubProjectSecret:
+    Type: Custom::GetSecureSSMFunction
+    Properties:
+      ServiceToken:
+        !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:getSecureSSM"
+      ParameterName: !Sub 
+        - /github/${RepValue}/secret
+        - {RepValue: !Ref RepositoryName}
+
+
+
   CloudFormationTrustRole:
     Description: Creating service role in IAM for AWS CloudFormation
     Properties:
@@ -126,18 +157,7 @@ Resources:
             - - 'arn:aws:s3:::'
               - !Ref 'CacheBucket'
               - /*
-        - Action:
-          - codecommit:GitPull
-          Effect: Allow
-          Resource:
-          - !Join
-            - ':'
-            - - arn
-              - aws
-              - codecommit
-              - !Ref 'AWS::Region'
-              - !Ref 'AWS::AccountId'
-              - !Ref CodeCommitRepoName
+      
         - Action:
           - kms:GenerateDataKey*
           - kms:Encrypt
@@ -191,22 +211,6 @@ Resources:
               - - 'arn:aws:s3:::'
                 - !Ref 'ArtifactsBucket'
                 - /*
-          - Action:
-            - codecommit:CancelUploadArchive
-            - codecommit:GetBranch
-            - codecommit:GetCommit
-            - codecommit:GetUploadArchiveStatus
-            - codecommit:UploadArchive
-            Effect: Allow
-            Resource:
-            - !Join
-              - ':'
-              - - arn
-                - aws
-                - codecommit
-                - !Ref 'AWS::Region'
-                - !Ref 'AWS::AccountId'
-                - !Ref CodeCommitRepoName
           - Action:
             - codebuild:StartBuild
             - codebuild:BatchGetBuilds
@@ -294,7 +298,6 @@ Resources:
         - - !Ref 'AWS::StackName'
           - CodePipeline
     Type: AWS::IAM::Role
-
   ArtifactBucketPolicy:
     Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
     Properties:
@@ -356,7 +359,6 @@ Resources:
           Sid: WhitelistedPut
         Version: 2012-10-17
     Type: AWS::S3::BucketPolicy
-
   ArtifactsBucket:
     DeletionPolicy: Delete
     Description: Creating Amazon S3 bucket for AWS CodePipeline and CodeBuild artifacts
@@ -370,7 +372,6 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
     Type: AWS::S3::Bucket
-
   CacheBucket:
     DeletionPolicy: Delete
     Description: Creating Amazon S3 bucket for CodeBuild caching
@@ -386,7 +387,6 @@ Resources:
           - ExpirationInDays: 30
             Status: Enabled
     Type: AWS::S3::Bucket
-  
   CodeBuildRole:
     Description: Creating service role in IAM for AWS CodeBuild
     Properties:
