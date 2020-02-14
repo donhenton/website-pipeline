@@ -18,6 +18,10 @@ Parameters:
     Description: final S3 bucket destination
     Type: String
     Default: com.awsdhenton.testing
+  Environment:
+    Description: environment indicator
+    Type: String
+
 
 Metadata:
 
@@ -32,7 +36,8 @@ Metadata:
       - Label:
           default: "Environment Configuration"          
         Parameters:
-          - WebSiteBucketName  
+          - WebSiteBucketName 
+          - Environment 
 
 Resources:
 
