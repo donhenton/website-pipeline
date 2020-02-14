@@ -100,6 +100,11 @@ Resources:
             - !Sub "arn:aws:iam::*:role/${AWS::StackName}*"
             - !Sub "arn:aws:iam::*:instance-profile/${AWS::StackName}*"
           - Action:
+            - 'lambda:InvokeFunction'
+            - 'lambda:ListFunctions'
+            Effect: Allow
+            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:getSecureSSM" 
+          - Action:
             - ssm:GetParameters
             - autoscaling:*
             - ec2:*
@@ -462,6 +467,25 @@ Resources:
                 StackName: !Sub  '${RepositoryName}-dev-website-create-stack'
                 TemplatePath: SourceOutput::deploy/templates/bucket-pipeline.yaml
                 TemplateConfiguration: SourceOutput::deploy/configs/dev.json
+      
+            - Name: dev-website-DoChangeSet
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: 1
+              InputArtifacts: []
+              OutputArtifacts: []
+              RunOrder: 2
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                Capabilities: CAPABILITY_NAMED_IAM
+                ChangeSetName: dev-website-changeset
+                RoleArn: !GetAtt
+                - CloudFormationTrustRole
+                - Arn
+                StackName: !Sub  '${RepositoryName}-dev-website-create-stack'
+      
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactsBucket
