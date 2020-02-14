@@ -91,7 +91,6 @@ Resources:
         -  - !Ref 'AWS::StackName'
            - CloudFormation
     Type: AWS::IAM::Role
-
   CodeBuildPolicy:
     Description: Setting IAM policy for service role for CodeBuild
     Properties:
@@ -214,7 +213,8 @@ Resources:
             - codebuild:StopBuild
             Effect: Allow
             Resource:
-            - !GetAtt 'CodeBuildProject.Arn'
+          #  - !GetAtt 'CodeBuildProject.Arn'
+             - "*"
           - Action:
             - codedeploy:CreateDeployment
             - codedeploy:GetApplicationRevision
@@ -293,4 +293,112 @@ Resources:
         - '-'
         - - !Ref 'AWS::StackName'
           - CodePipeline
+    Type: AWS::IAM::Role
+
+  ArtifactBucketPolicy:
+    Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
+    Properties:
+      Bucket: !Ref 'ArtifactsBucket'
+      PolicyDocument:
+        Id: SSEAndSSLPolicy
+        Statement:
+        - Action:
+          - s3:GetObject
+          - s3:GetObjectVersion
+          - s3:GetBucketVersioning
+          Condition:
+            Bool:
+              aws:SecureTransport: false
+          Effect: Allow
+          Principal:
+            AWS:
+            - !GetAtt
+              - CodePipelineTrustRole
+              - Arn
+            - !GetAtt
+              - CodeBuildRole
+              - Arn
+            - !GetAtt
+              - CloudFormationTrustRole
+              - Arn
+          Resource:
+          - !Join
+            - ''
+            - - 'arn:aws:s3:::'
+              - !Ref 'ArtifactsBucket'
+          - !Join
+            - ''
+            - - 'arn:aws:s3:::'
+              - !Ref 'ArtifactsBucket'
+              - /*
+          Sid: WhitelistedGet
+        - Action:
+          - s3:PutObject
+          Effect: Allow
+          Principal:
+            AWS:
+            - !GetAtt
+              - CodePipelineTrustRole
+              - Arn
+            - !GetAtt
+              - CodeBuildRole
+              - Arn
+          Resource:
+          - !Join
+            - ''
+            - - 'arn:aws:s3:::'
+              - !Ref 'ArtifactsBucket'
+          - !Join
+            - ''
+            - - 'arn:aws:s3:::'
+              - !Ref 'ArtifactsBucket'
+              - /*
+          Sid: WhitelistedPut
+        Version: 2012-10-17
+    Type: AWS::S3::BucketPolicy
+
+  ArtifactsBucket:
+    DeletionPolicy: Delete
+    Description: Creating Amazon S3 bucket for AWS CodePipeline and CodeBuild artifacts
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Join
+        - '-'
+        - - !Ref 'AWS::StackName'
+          - ArtifactsBucket
+      VersioningConfiguration:
+        Status: Enabled
+    Type: AWS::S3::Bucket
+
+  CacheBucket:
+    DeletionPolicy: Delete
+    Description: Creating Amazon S3 bucket for CodeBuild caching
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Join
+        - '-'
+        - - !Ref 'AWS::StackName'
+          - CacheBucket
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 30
+            Status: Enabled
+    Type: AWS::S3::Bucket
+  
+  CodeBuildRole:
+    Description: Creating service role in IAM for AWS CodeBuild
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+      Path: /
+      RoleName: !Join
+        - '-'
+        - - !Ref 'AWS::StackName'
+          - CodeBuild
     Type: AWS::IAM::Role
