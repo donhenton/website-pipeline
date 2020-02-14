@@ -457,7 +457,7 @@ Resources:
                 Capabilities: CAPABILITY_NAMED_IAM
                 ChangeSetName: dev-website-changeset
                 RoleArn: !GetAtt
-                 - CodePipelineTrustRole
+                 - CloudFormationTrustRole
                  - Arn
                 StackName: !Sub  '${RepositoryName}-dev-website-create-stack'
                 TemplatePath: SourceOutput::deploy/templates/bucket-pipeline.yaml
