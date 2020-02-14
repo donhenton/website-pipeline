@@ -270,8 +270,7 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/AdministratorAccess'
     Metadata:
-      'AWS::CloudFormation::Designer':
-        id: e5a571ad-86b8-4d00-bdf4-f40f30c539fc
+ 
 Outputs:
   BucketName:
     Value: !Ref CodePipelineArtifactStoreBucket
