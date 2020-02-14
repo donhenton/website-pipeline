@@ -3,18 +3,18 @@ Description: >
   This will create a pipeline for angular code to an S3 bucket that represents a
   public website
 Parameters:
-  BranchName:
+  WebSiteBranchName:
     Description: GitHub branch name
     Type: String
     Default: master
-  RepositoryName:
+  WebSiteRepositoryName:
     Description: GitHub repository name
     Type: String
     Default: code-samples
-  GitHubOwner:
+  WebSiteGitHubOwner:
       Type: String
       Default: donhenton
-  TargetBucketName:
+  WebSiteBucketName:
     Description: final S3 bucket destination
     Type: String
     Default: com.awsdhenton.testing
@@ -26,13 +26,13 @@ Metadata:
       - Label:
           default: "Github Information"    
         Parameters:
-          - RepositoryName
-          - GitHubOwner  
-          - BranchName
+          - WebSiteRepositoryName
+          - WebSiteGitHubOwner  
+          - WebSiteBranchName
       - Label:
           default: "Environment Configuration"          
         Parameters:
-          - TargetBucketName  
+          - WebSiteBucketName  
 
 Resources:
 
@@ -49,7 +49,7 @@ Resources:
         !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:getSecureSSM"
       ParameterName: !Sub 
         - /github/${RepValue}/secret
-        - {RepValue: !Ref RepositoryName}
+        - {RepValue: !Ref WebSiteRepositoryName}
 
   CodePipelineArtifactStoreBucket:
     Type: 'AWS::S3::Bucket'
@@ -178,7 +178,7 @@ Resources:
           MatchEquals: 'refs/heads/{Branch}'
       TargetPipeline: !Ref AppPipeline
       TargetAction: SourceAction
-      Name: !Sub 'AppPipelineWebhook-${RepositoryName}'
+      Name: !Sub 'AppPipelineWebhook-${WebSiteRepositoryName}'
       TargetPipelineVersion: !GetAtt 
         - AppPipeline
         - Version
@@ -191,7 +191,7 @@ Resources:
     Properties:
       Name: !Sub 
         - ${RepValue}-deploy-pipeline
-        - {RepValue: !Ref RepositoryName}
+        - {RepValue: !Ref WebSiteRepositoryName}
       RoleArn: !GetAtt 
         - CodePipelineServiceRole
         - Arn
@@ -207,9 +207,9 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
               Configuration:
-                Owner: !Ref GitHubOwner
-                Repo: !Ref RepositoryName
-                Branch: !Ref BranchName
+                Owner: !Ref WebSiteGitHubOwner
+                Repo: !Ref WebSiteRepositoryName
+                Branch: !Ref WebSiteBranchName
                 OAuthToken: !Sub '${GithubOauthToken.Value}'
                 PollForSourceChanges: false
               RunOrder: 1
@@ -222,7 +222,7 @@ Resources:
                 Version: 1
                 Provider: S3
               Configuration:
-                BucketName: !Ref TargetBucketName
+                BucketName: !Ref WebSiteBucketName
                 Extract: true
               InputArtifacts:
                 - Name: SourceOutput
