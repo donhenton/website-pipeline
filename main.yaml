@@ -446,6 +446,20 @@ Resources:
                 OAuthToken: !Sub '${GithubOauthToken.Value}'
                 PollForSourceChanges: false
               RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: S3
+              Configuration:
+                BucketName: !Ref TargetBucketName
+                Extract: true
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 2    
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactsBucket
