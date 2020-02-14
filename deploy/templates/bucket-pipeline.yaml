@@ -21,6 +21,7 @@ Parameters:
   Environment:
     Description: environment indicator
     Type: String
+    Default: alpha
 
 
 Metadata:
