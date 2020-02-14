@@ -108,6 +108,8 @@ Resources:
             - ssm:GetParameters
             - autoscaling:*
             - ec2:*
+            - s3:*
+            - codepipeline:*
             - codedeploy:*
             - elasticloadbalancing:*
             Effect: Allow
