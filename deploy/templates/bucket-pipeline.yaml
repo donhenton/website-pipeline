@@ -183,7 +183,7 @@ Resources:
           MatchEquals: 'refs/heads/{Branch}'
       TargetPipeline: !Ref AppPipeline
       TargetAction: SourceAction
-      Name: !Sub 'AppPipelineWebhook-${WebSiteRepositoryName}'
+      Name: !Sub 'AppPipelineWebhook-${WebSiteRepositoryName}-${Environment}'
       TargetPipelineVersion: !GetAtt 
         - AppPipeline
         - Version
@@ -195,8 +195,8 @@ Resources:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
       Name: !Sub 
-        - ${RepValue}-deploy-pipeline
-        - {RepValue: !Ref WebSiteRepositoryName}
+        - ${RepValue}-deploy-pipeline-${EnvValue}
+        - {RepValue: !Ref WebSiteRepositoryName,EnvValue: !Ref Environment}
       RoleArn: !GetAtt 
         - CodePipelineServiceRole
         - Arn
